@@ -1,4 +1,7 @@
 import org.apache.poi.ss.usermodel.Cell;
+import org.apache.poi.ss.usermodel.Row;
+import org.apache.poi.ss.usermodel.Sheet;
+import org.apache.poi.ss.usermodel.Workbook;
 import org.apache.poi.xssf.usermodel.XSSFCell;
 import org.apache.poi.xssf.usermodel.XSSFRow;
 import org.apache.poi.xssf.usermodel.XSSFSheet;
@@ -10,47 +13,42 @@ import java.util.Iterator;
 
 public class ReadingExcelFileWithIterator {
 
-    public static void main(String[] args) throws IOException {
+    public static void main(String[] args) {
         String excelFilePath = "./data/users.xlsx";
 
-        try(FileInputStream inputstream = new FileInputStream(excelFilePath);
-        XSSFWorkbook workbook = new XSSFWorkbook(inputstream)){
+        try (FileInputStream inputStream = new FileInputStream(excelFilePath);
+            Workbook workbook = new XSSFWorkbook(inputStream)) {
+            Sheet sheet = workbook.getSheetAt(0);
 
-            XSSFSheet sheet = workbook.getSheetAt(0);
-            int rows = sheet.getLastRowNum();
-            System.out.println("rows = " + rows);
-            int cols = sheet.getRow(1).getLastCellNum();
-            System.out.println("cols = " + cols);
-
-            Iterator iterator = sheet.iterator();
-
-            while (iterator.hasNext()) {
-                XSSFRow row = (XSSFRow) iterator.next();
-                Iterator cellIterator = row.cellIterator();
-
-                while (cellIterator.hasNext()) {
-                    XSSFCell cell = (XSSFCell) cellIterator.next();
+            for (Row row : sheet) {
+                for (Cell cell : row) {
                     System.out.printf("%-25s", getCellValue(cell));
                 }
-
                 System.out.println();
             }
+
+        } catch (IOException e) {
+            e.printStackTrace();
         }
     }
+
     private static String getCellValue(Cell cell) {
         if (cell == null) return "";
-        switch (cell.getCellType()) {
-            case STRING: return cell.getStringCellValue();
-            case NUMERIC: return String.valueOf(cell.getNumericCellValue());
-            case BOOLEAN: return String.valueOf(cell.getBooleanCellValue());
-            case FORMULA:
-                switch (cell.getCachedFormulaResultType()) {
-                    case STRING: return cell.getStringCellValue();
-                    case NUMERIC: return String.valueOf(cell.getNumericCellValue());
-                    case BOOLEAN: return String.valueOf(cell.getBooleanCellValue());
-                    default: return "";
-                }
-            default: return "";
-        }
+        return switch (cell.getCellType()) {
+            case STRING -> cell.getStringCellValue();
+            case NUMERIC -> String.valueOf(cell.getNumericCellValue());
+            case BOOLEAN -> String.valueOf(cell.getBooleanCellValue());
+            case FORMULA -> getFormulaCellValue(cell);
+            default -> "";
+        };
+    }
+
+    private static String getFormulaCellValue(Cell cell) {
+        return switch (cell.getCachedFormulaResultType()) {
+            case STRING -> cell.getStringCellValue();
+            case NUMERIC -> String.valueOf(cell.getNumericCellValue());
+            case BOOLEAN -> String.valueOf(cell.getBooleanCellValue());
+            default -> "";
+        };
     }
 }
