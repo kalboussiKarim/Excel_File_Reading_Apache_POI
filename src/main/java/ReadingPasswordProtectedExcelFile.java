@@ -1,19 +1,19 @@
-import org.apache.poi.ss.usermodel.Cell;
-import org.apache.poi.ss.usermodel.Row;
-import org.apache.poi.ss.usermodel.Sheet;
-import org.apache.poi.ss.usermodel.Workbook;
+import org.apache.poi.ss.usermodel.*;
+import org.apache.poi.xssf.usermodel.XSSFSheet;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.util.Iterator;
 
-public class ReadingExcelFileWithIterator {
-
+public class ReadingPasswordProtectedExcelFile {
     public static void main(String[] args) {
         String excelFilePath = "./data/users.xlsx";
+        String password = "karim";
 
-        try (FileInputStream inputStream = new FileInputStream(excelFilePath);
-            Workbook workbook = new XSSFWorkbook(inputStream)) {
+        try (FileInputStream fis = new FileInputStream(excelFilePath);
+            Workbook workbook = WorkbookFactory.create(fis, password)) {
+
             Sheet sheet = workbook.getSheetAt(0);
 
             for (Row row : sheet) {
@@ -29,13 +29,15 @@ public class ReadingExcelFileWithIterator {
     }
 
     private static String getCellValue(Cell cell) {
-        if (cell == null) return "";
+        if (cell == null) return "(null)";
+
         return switch (cell.getCellType()) {
             case STRING -> cell.getStringCellValue();
             case NUMERIC -> String.valueOf(cell.getNumericCellValue());
             case BOOLEAN -> String.valueOf(cell.getBooleanCellValue());
             case FORMULA -> getFormulaCellValue(cell);
-            default -> "";
+            case BLANK -> "";
+            default -> "(UNSUPPORTED_TYPE)";
         };
     }
 
@@ -44,7 +46,8 @@ public class ReadingExcelFileWithIterator {
             case STRING -> cell.getStringCellValue();
             case NUMERIC -> String.valueOf(cell.getNumericCellValue());
             case BOOLEAN -> String.valueOf(cell.getBooleanCellValue());
-            default -> "";
+            case BLANK -> "";
+            default -> "(UNSUPPORTED_FORMULA_TYPE)";
         };
     }
 }
